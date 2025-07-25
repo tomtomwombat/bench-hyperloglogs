@@ -9,6 +9,8 @@ ahash = "0.8.12"
 rand = "0.8"
 rayon = "1.10.0"
 
+amadeus-streaming = "=0.4.3"
+cardinality-estimator = "1.0.2"
 hyperloglog = "1.0.2"
 hyperloglogplus = "0.4.1"
 probabilistic-collections = "0.7.0"
