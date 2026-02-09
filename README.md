@@ -15,7 +15,3 @@ The code is a bit messy!
 # Results
 
 Most recent results are in https://github.com/tomtomwombat/hyperloglockless/
-
-![perf](https://github.com/user-attachments/assets/706b34a4-6764-48cc-84d2-168259797031)
-
-![err](https://github.com/user-attachments/assets/e53ab8db-cfe8-4b35-9e28-6b872c268f8f)
