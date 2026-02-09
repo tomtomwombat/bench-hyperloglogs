@@ -1,10 +1,10 @@
 from math import log10, log2, log
 import matplotlib.pyplot as plt 
 import csv
-from matplotlib import colormaps
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import FuncFormatter
-
+import matplotlib.colors as mcolors
+from matplotlib import colormaps
 plt.rcParams['font.size'] = 20
 
 viridis = colormaps['viridis']
@@ -20,14 +20,25 @@ filters = [('hyperloglockless (%d bytes)' % (2**i), magma((i - min_size) * color
 alpha = 1
 lw = 3.5
 
+
+def swap_color(c, i, j):
+    sparse_color = mcolors.to_rgb(cm[0])
+    rgb = list(mcolors.to_rgb(c))
+    rgb[i], rgb[j] = rgb[j], rgb[i]
+    return tuple(rgb)
+
 cm = [colormaps['Set2'](i / 8) for i in range(8)]
+
 filters = [
-    ('hyperloglogplus (HyperLogLogPlus)',  cm[1], alpha, lw),
-    ('hyperloglogplus (HyperLogLog)',  cm[2], alpha, lw),
-    ('cardinality-estimator',  cm[3], alpha, lw),
-    ('probabilistic-collections',  cm[4], alpha, lw),
-    ('amadeus-streaming', cm[5], alpha, lw),
-    ('hyperloglockless', cm[0], 1, lw),
+    ('hyperloglogplus::HyperLogLogPlus',  cm[1], alpha, lw),
+    ('hyperloglogplus::HyperLogLogPF',  cm[2], alpha, lw),
+    ('cardinality_estimator::CardinalityEstimator',  cm[3], alpha, lw),
+    ('probabilistic_collections::HyperLogLog',  cm[4], alpha, lw),
+    ('amadeus_streaming::HyperLogLog', cm[5], alpha, lw),
+    ('apache_datafusion::HyperLogLog', swap_color(cm[5], 1, 2), alpha, lw),
+    ('hyperloglockless::HyperLogLog', cm[0], 1, lw),
+    ('hyperloglockless::HyperLogLogPlus', swap_color(cm[0], 1, 2), 1, lw),
+    # ('hyperloglockless (Old)', cm[6], 1, lw),
 ]
 
 fig, ax = plt.subplots()
@@ -36,10 +47,10 @@ def custom_format(yy, _):
     if yy >= 1:
         return f"{int(yy)}"
     else:
-        return f"{yy:.3f}".rstrip("0").rstrip(".")
+        return f"{yy:.5f}".rstrip("0").rstrip(".")
 
 for i, (name, color, aa, lw) in enumerate(filters):
-    file_name = 'Acc/%s.csv' % name
+    file_name = ('Acc/%s.csv' % name).replace('::', '__')
     print(file_name)
     with open(file_name, 'r') as csvfile:
         data = []
@@ -64,34 +75,26 @@ for i, (name, color, aa, lw) in enumerate(filters):
 plt.xlabel('True Number of Distinct Elements') 
 plt.ylabel('Error %') 
 
-plt.title('HyperLogLog Error (Lower is Better)')
-'''
-# Size comparison
-
-plt.xlim(left=min(x), right=max(x))
-plt.ylim(bottom=0.01)
-plt.gca().yaxis.set_major_formatter(ScalarFormatter())
-plt.gca().yaxis.get_major_formatter().set_scientific(False)
-plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_format))
-'''
+plt.title('HyperLogLog Error, Lower is Better (Precision = 14)')
 
 # Crate Comparison
 
 plt.xlim(left=150)
 plt.xlim(right=max(x))
-plt.ylim(bottom=0.0005)
-plt.ylim(top=100)
+plt.ylim(bottom=0.000005)
+plt.ylim(top=125)
 plt.gca().yaxis.set_major_formatter(ScalarFormatter())
 plt.gca().yaxis.get_major_formatter().set_scientific(False)
 plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_format))
 
-handles,labels = ax.get_legend_handles_labels()
+handles, labels = ax.get_legend_handles_labels()
 
-handles = [handles.pop()] + handles
-labels = [labels.pop()] + labels
+# make hyperlogloglockless appear on top
+handles = [handles.pop(), handles.pop()] + handles
+labels = [labels.pop(), labels.pop()] + labels
 
 plt.grid()
 # https://stackoverflow.com/questions/67033128/matplotlib-order-of-legend-entries
-plt.legend(handles,labels,loc='upper left')
+plt.legend(handles, labels, loc='lower right')
 plt.show()
 

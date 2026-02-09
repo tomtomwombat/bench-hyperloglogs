@@ -1,4 +1,5 @@
 use hyperloglogplus::HyperLogLog as _;
+use std::hash::BuildHasher;
 use std::hash::Hash;
 
 pub trait Container<X: Hash> {
@@ -8,7 +9,7 @@ pub trait Container<X: Hash> {
     fn name() -> &'static str;
 }
 
-impl Container<u64> for hyperloglockless::HyperLogLog<ahash::RandomState> {
+impl<S: BuildHasher + Default> Container<u64> for hyperloglockless::HyperLogLog<S> {
     #[inline]
     fn put(&mut self, s: &u64) {
         self.insert(s);
@@ -18,10 +19,27 @@ impl Container<u64> for hyperloglockless::HyperLogLog<ahash::RandomState> {
         self.raw_count()
     }
     fn init(precision: u8) -> Self {
-        hyperloglockless::HyperLogLog::with_hasher(precision, ahash::RandomState::default())
+        hyperloglockless::HyperLogLog::with_hasher(precision, S::default())
     }
     fn name() -> &'static str {
         "hyperloglockless::HyperLogLog"
+    }
+}
+
+impl Container<u64> for hyperloglockless::HyperLogLogPlus<ahash::RandomState> {
+    #[inline]
+    fn put(&mut self, s: &u64) {
+        self.insert(s);
+    }
+    #[inline]
+    fn get_count(&mut self) -> f64 {
+        self.raw_count()
+    }
+    fn init(precision: u8) -> Self {
+        hyperloglockless::HyperLogLogPlus::with_hasher(precision, ahash::RandomState::default())
+    }
+    fn name() -> &'static str {
+        "hyperloglockless::HyperLogLogPlus"
     }
 }
 
@@ -168,5 +186,23 @@ impl Container<u64> for amadeus_streaming::HyperLogLog<u64> {
     }
     fn name() -> &'static str {
         "amadeus_streaming::HyperLogLog"
+    }
+}
+
+impl Container<u64> for crate::apache_hll::HyperLogLog<u64> {
+    #[inline]
+    fn put(&mut self, s: &u64) {
+        self.add(s);
+    }
+    #[inline]
+    fn get_count(&mut self) -> f64 {
+        self.count() as f64
+    }
+    fn init(precision: u8) -> Self {
+        assert_eq!(precision, 14);
+        crate::apache_hll::HyperLogLog::<u64>::new()
+    }
+    fn name() -> &'static str {
+        "apache_datafusion::HyperLogLog"
     }
 }

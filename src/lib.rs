@@ -8,6 +8,8 @@ use std::time::Instant;
 mod container;
 pub use container::Container;
 
+pub mod apache_hll;
+
 use hyperloglockless::{AtomicHyperLogLog, HyperLogLog};
 #[allow(unused_imports)]
 use hyperloglogplus::{HyperLogLog as HyperLogLogTrait, HyperLogLogPF, HyperLogLogPlus};
@@ -145,7 +147,7 @@ pub fn accuarcy<T: Container<u64>>(
     step: Step,
     precision: u8,
 ) -> impl Iterator<Item = (u64, f64, f64, f64)> {
-    let num_trials: u64 = 16;
+    let num_trials: u64 = 8; //128;
     let data = (0..num_trials)
         .into_par_iter()
         .map(|offset| {

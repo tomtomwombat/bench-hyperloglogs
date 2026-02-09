@@ -3,11 +3,13 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
 
-plt.rcParams['font.size'] = 18
+plt.rcParams['font.size'] = 20
+
 cm = [colormaps['Set2'](i / 8) for i in range(8)]
 filters = [
     ('hyperloglockless::HyperLogLog', cm[0]),
     ('hyperloglockless::AtomicHyperLogLog', cm[0]),
+    ('hyperloglockless::HyperLogLogPlus', cm[0]),
 
     ('cardinality_estimator::CardinalityEstimator', 'black'),
 
@@ -16,15 +18,17 @@ filters = [
 
     ('amadeus_streaming::HyperLogLog', 'black'),
     ('probabilistic_collections::HyperLogLog', 'black'),
+    
+    ('apache_datafusion::HyperLogLog', 'black'),
 ]
 
-filters = [(x.replace('::', '\n::'), y) for (x,y) in filters]
+filters = [(x.replace('::', '\n::').replace('_', '\n_'), y) for (x,y) in filters]
 
 directory = r"target\criterion"
 
 def file_to_name(file):
     for name, _ in filters:
-        if name.lower().replace('\n::', '__') == file:
+        if name.lower().replace('\n::', '__').replace('\n_', '_') == file:
             return name
 
 def color(for_name):
@@ -55,7 +59,7 @@ def autolabel(rects, ax):
                     textcoords="offset points",  # Relative positioning
                     ha='center',  # Horizontal alignment
                     va='bottom', # Vertical alignment
-                    fontsize=12)  
+                    fontsize=14)  
 
 def get_immediate_subdirectories(a_dir):
     return [name for name in os.listdir(a_dir) if os.path.isdir(os.path.join(a_dir, name))]
@@ -99,7 +103,7 @@ def plot(title, data, mult=1000.0, log=False):
     y = [data[x] for x,_ in filters]
     [autolabel(r, ax) for r in b] # set val above each bar
     plt.ylabel('Speed (ns)')
-    ax.tick_params(axis='x', labelsize=12)
+    ax.tick_params(axis='x', labelsize=11)
     if log: ax.set_yscale('log')
     plt.title(title)
     # ax.legend(b, names, ncol = 3, loc = 'best', framealpha = 0.1)
@@ -107,5 +111,6 @@ def plot(title, data, mult=1000.0, log=False):
     plt.show()
 
 data = read_data()
-plot('HyperLogLog Insert Time (Precision = 10)', data['insert'])
-plot('HyperLogLog Count Time (Precision = 10)', data['count'], mult=1.0)
+plot('HyperLogLog Insert Time (Precision = 14)', data['insert'])
+plot('HyperLogLog Count Time (Precision = 14)', data['count'], mult=1.0)
+plot('HyperLogLog Insert 8K & Count Time (Precision = 14)', data['fill'], mult=1.0)
