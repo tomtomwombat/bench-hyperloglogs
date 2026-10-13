@@ -7,6 +7,7 @@ use std::time::Instant;
 
 mod container;
 pub use container::Container;
+mod memory;
 
 pub mod apache_hll;
 
@@ -147,7 +148,7 @@ pub fn accuarcy<T: Container<u64>>(
     step: Step,
     precision: u8,
 ) -> impl Iterator<Item = (u64, f64, f64, f64)> {
-    let num_trials: u64 = 8; //128;
+    let num_trials: u64 = 32;
     let data = (0..num_trials)
         .into_par_iter()
         .map(|offset| {

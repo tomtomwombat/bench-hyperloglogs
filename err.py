@@ -31,11 +31,12 @@ cm = [colormaps['Set2'](i / 8) for i in range(8)]
 
 filters = [
     ('hyperloglogplus::HyperLogLogPlus',  cm[1], alpha, lw),
-    ('hyperloglogplus::HyperLogLogPF',  cm[2], alpha, lw),
+    ('hyperloglogplus::HyperLogLogPF', swap_color(cm[2], 0, 1), alpha, lw),
     ('cardinality_estimator::CardinalityEstimator',  cm[3], alpha, lw),
     ('probabilistic_collections::HyperLogLog',  cm[4], alpha, lw),
     ('amadeus_streaming::HyperLogLog', cm[5], alpha, lw),
     ('apache_datafusion::HyperLogLog', swap_color(cm[5], 1, 2), alpha, lw),
+    ('datasketches::hll::HllSketch', swap_color(cm[5], 0, 2), alpha, lw),
     ('hyperloglockless::HyperLogLog', cm[0], 1, lw),
     ('hyperloglockless::HyperLogLogPlus', swap_color(cm[0], 1, 2), 1, lw),
     # ('hyperloglockless (Old)', cm[6], 1, lw),
@@ -75,7 +76,7 @@ for i, (name, color, aa, lw) in enumerate(filters):
 plt.xlabel('True Number of Distinct Elements') 
 plt.ylabel('Error %') 
 
-plt.title('HyperLogLog Error, Lower is Better (Precision = 14)')
+plt.title('HyperLogLog Error, Lower is Better (Precision = 14)', fontweight='bold')
 
 # Crate Comparison
 

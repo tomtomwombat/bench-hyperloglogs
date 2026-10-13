@@ -1,12 +1,34 @@
 use hyperloglogplus::HyperLogLog as _;
 use std::hash::BuildHasher;
 use std::hash::Hash;
+use std::borrow::Borrow;
 
 pub trait Container<X: Hash> {
     fn put(&mut self, s: &X);
     fn get_count(&mut self) -> f64;
     fn init(precision: u8) -> Self;
     fn name() -> &'static str;
+    #[inline(always)]
+    fn put_all<I>(&mut self, iter: I)
+    where
+        X: Hash,
+        I: IntoIterator,
+        I::Item: Borrow<X>,
+    {
+        for x in iter {
+            self.put(x.borrow());
+        }
+    }
+    #[inline(always)]
+    fn one_shot<'a, I: Iterator<Item = &'a X>>(precision: u8, iter: I) -> f64
+    where
+        Self: Sized,
+        X: 'a,
+    {
+        let mut this = Self::init(precision);
+        this.put_all(iter);
+        this.get_count()
+    }
 }
 
 impl<S: BuildHasher + Default> Container<u64> for hyperloglockless::HyperLogLog<S> {
@@ -23,10 +45,18 @@ impl<S: BuildHasher + Default> Container<u64> for hyperloglockless::HyperLogLog<
     }
     fn name() -> &'static str {
         "hyperloglockless::HyperLogLog"
+    }   
+    #[inline(always)]
+    fn put_all<I>(&mut self, iter: I)
+    where
+        I: IntoIterator,
+        I::Item: Borrow<u64>,
+    {
+        self.insert_all(iter);
     }
 }
 
-impl Container<u64> for hyperloglockless::HyperLogLogPlus<ahash::RandomState> {
+impl<S: BuildHasher + Default> Container<u64> for hyperloglockless::HyperLogLogPlus<S> {
     #[inline]
     fn put(&mut self, s: &u64) {
         self.insert(s);
@@ -36,10 +66,18 @@ impl Container<u64> for hyperloglockless::HyperLogLogPlus<ahash::RandomState> {
         self.raw_count()
     }
     fn init(precision: u8) -> Self {
-        hyperloglockless::HyperLogLogPlus::with_hasher(precision, ahash::RandomState::default())
+        hyperloglockless::HyperLogLogPlus::with_hasher(precision, S::default())
     }
     fn name() -> &'static str {
         "hyperloglockless::HyperLogLogPlus"
+    }
+    #[inline(always)]
+    fn put_all<I>(&mut self, iter: I)
+    where
+        I: IntoIterator,
+        I::Item: Borrow<u64>,
+    {
+        self.insert_all(iter);
     }
 }
 
@@ -204,5 +242,22 @@ impl Container<u64> for crate::apache_hll::HyperLogLog<u64> {
     }
     fn name() -> &'static str {
         "apache_datafusion::HyperLogLog"
+    }
+}
+
+impl Container<u64> for datasketches::hll::HllSketch {
+    #[inline]
+    fn put(&mut self, s: &u64) {
+        self.update(s);
+    }
+    #[inline]
+    fn get_count(&mut self) -> f64 {
+        self.estimate()
+    }
+    fn init(precision: u8) -> Self {
+        datasketches::hll::HllSketch::new(precision, datasketches::hll::HllType::Hll8)
+    }
+    fn name() -> &'static str {
+        "datasketches::hll::HllSketch"
     }
 }

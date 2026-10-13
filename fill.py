@@ -22,24 +22,27 @@ cm = [colormaps['Set2'](i / 8) for i in range(8)]
 
 filters = {
     'hyperloglogplus::HyperLogLogPlus': cm[1],
-    'hyperloglogplus::HyperLogLogPF':  cm[2],
+    'hyperloglogplus::HyperLogLogPF': swap_color(cm[2], 0, 1),
     'cardinality_estimator::CardinalityEstimator': cm[3], 
     'probabilistic_collections::HyperLogLog':  cm[4],
     'amadeus_streaming::HyperLogLog': cm[5],
     'apache_datafusion::HyperLogLog': swap_color(cm[5], 1, 2),
+    'datasketches::hll::HllSketch': swap_color(cm[5], 0, 2),
     'hyperloglockless::HyperLogLog': cm[0],
     'hyperloglockless::HyperLogLogPlus': swap_color(cm[0], 1, 2),
     # ('hyperloglockless (Old)', cm[6], 1, lw),
 }
 
 def fix_name(s):
-    crate, ds = s.split('__')
-    ds = ds \
+    x = s.split('__')
+    x[-1] = x[-1] \
     .replace('hyperloglog', 'HyperLogLog')\
+    .replace('atomic', 'Atomic')\
     .replace('plus', 'Plus') \
     .replace('cardinalityestimator', 'CardinalityEstimator')\
-    .replace('pf', 'PF')
-    return crate + "::" + ds
+    .replace('pf', 'PF') \
+    .replace('hllsketch', 'HllSketch')
+    return '::'.join(x)
     
 
 # --- CONFIGURATION ---
@@ -87,14 +90,17 @@ def plot_criterion_results():
     plt.figure(figsize=(12, 7))
 
     for crate_name, values in results.items():
+        label = fix_name(crate_name)
+        if label not in filters: continue
+        color = filters[label]
+
         values.sort()
         x, y = zip(*values)
         
         # Determine color: check dict, else use default
         line_color = COLORS.get(crate_name, DEFAULT_COLOR)
         x, y = zip(*[(xi, yi) for (xi, yi) in zip(x, y) if 64 < xi < 2**20])
-        label = fix_name(crate_name)
-        color = filters[label]
+       
         plt.plot(
             x, y, 
             marker='o', 

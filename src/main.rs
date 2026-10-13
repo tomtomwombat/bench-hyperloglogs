@@ -25,25 +25,21 @@ fn write_acc_data<T: Container<u64>>(precision: u8) -> std::io::Result<()> {
     Ok(())
 }
 
+#[rustfmt::skip]
 fn main() {
-    //for p in 12..=16 {
-    //    write_acc_data::<hyperloglockless::HyperLogLog<ahash::RandomState>>(p).unwrap();
-    //}
-    //perf();
-
-    let p = 4;
+    let p = 14;
+    
     write_acc_data::<hyperloglockless::HyperLogLog<ahash::RandomState>>(p).unwrap();
     write_acc_data::<hyperloglockless::HyperLogLogPlus<ahash::RandomState>>(p).unwrap();
-
+    /*
     write_acc_data::<hyperloglogplus::HyperLogLogPF<u64, ahash::RandomState>>(p).unwrap();
     write_acc_data::<hyperloglogplus::HyperLogLogPlus<u64, ahash::RandomState>>(p).unwrap();
-
-    //write_acc_data::<cardinality_estimator::CardinalityEstimator<u64, ahash::AHasher, 14, 6>>(p).unwrap();
-    //write_acc_data::<amadeus_streaming::HyperLogLog<u64>>(p).unwrap();
-    //write_acc_data::<probabilistic_collections::hyperloglog::HyperLogLog::<u64, ahash::RandomState>>(p).unwrap();
-
-    //write_acc_data::<crate::apache_hll::HyperLogLog::<u64>>(p).unwrap();
-
+    write_acc_data::<cardinality_estimator::CardinalityEstimator<u64, ahash::AHasher, 14, 6>>(p).unwrap();
+    write_acc_data::<amadeus_streaming::HyperLogLog<u64>>(p).unwrap();
+    write_acc_data::<probabilistic_collections::hyperloglog::HyperLogLog<u64, ahash::RandomState>>(p).unwrap();
+    write_acc_data::<crate::apache_hll::HyperLogLog<u64>>(p).unwrap();
+    write_acc_data::<datasketches::hll::HllSketch>(p).unwrap();
+    */
     // This crashes index out of bound
     // write_acc_data::<hyperloglog::HyperLogLog>(16).unwrap();
 }

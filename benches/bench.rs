@@ -1,6 +1,5 @@
 use ahash::RandomState;
 use bench_hll::Container;
-use criterion::BatchSize;
 use criterion::measurement::WallTime;
 use criterion::{BenchmarkGroup, Criterion, criterion_group, criterion_main};
 use hyperloglogplus::{HyperLogLog as HyperLogLogTrait, HyperLogLogPF, HyperLogLogPlus};
@@ -20,18 +19,8 @@ fn insert_bench<T: Container<u64>>(group: &mut BenchmarkGroup<'_, WallTime>, hll
 
 fn fill_bench<T: Container<u64>>(group: &mut BenchmarkGroup<'_, WallTime>, num: u64) {
     let name = format!("items-{}-{}", num, T::name());
-    group.bench_function(name, |b| {
-        b.iter_batched(
-            || black_box(T::init(P)),
-            |mut hll| {
-                for x in 0..num {
-                    black_box(hll.put(&x));
-                }
-                let _ = black_box(hll.get_count());
-            },
-            BatchSize::SmallInput,
-        )
-    });
+    let data: Vec<u64> = (1..=num).collect();
+    group.bench_function(name, |b| b.iter(|| black_box(T::one_shot(P, data.iter()))));
 }
 
 fn count_bench<T: Container<u64>>(group: &mut BenchmarkGroup<'_, WallTime>, hll: &mut T) {
@@ -39,9 +28,11 @@ fn count_bench<T: Container<u64>>(group: &mut BenchmarkGroup<'_, WallTime>, hll:
 }
 
 fn bench(c: &mut Criterion) {
-    let mut lockless = hyperloglockless::HyperLogLog::<ahash::RandomState>::init(P);
+    // Fill/items-64-hyperloglockless::HyperLogLog
+    let mut lockless: hyperloglockless::HyperLogLog = hyperloglockless::HyperLogLog::init(P);
+
     let mut lockless_atomic = hyperloglockless::AtomicHyperLogLog::init(P);
-    let mut lockless_plus = hyperloglockless::HyperLogLogPlus::init(P);
+    let mut lockless_plus: hyperloglockless::HyperLogLogPlus = hyperloglockless::HyperLogLogPlus::init(P);
 
     let mut hll: HyperLogLogPF<u64, _> = HyperLogLogPF::init(P);
     let mut hll_plus: HyperLogLogPlus<u64, _> = HyperLogLogPlus::init(P);
@@ -95,25 +86,21 @@ fn bench(c: &mut Criterion) {
     group.finish();
 }
 
+#[rustfmt::skip]
 fn bench_fill(c: &mut Criterion) {
     let mut group = c.benchmark_group("Fill");
     let it = PowerIterator::new(2.0f64.sqrt());
     for num in it.into_iter().skip(12).take(31) {
         fill_bench::<hyperloglockless::HyperLogLog<ahash::RandomState>>(&mut group, num);
+        fill_bench::<hyperloglockless::AtomicHyperLogLog<ahash::RandomState>>(&mut group, num);
         fill_bench::<hyperloglockless::HyperLogLogPlus<ahash::RandomState>>(&mut group, num);
-
         fill_bench::<HyperLogLogPF<u64, _>>(&mut group, num);
         fill_bench::<HyperLogLogPlus<u64, _>>(&mut group, num);
-
-        fill_bench::<
-            cardinality_estimator::CardinalityEstimator<u64, ahash::AHasher, { P as usize }, 6>,
-        >(&mut group, num);
+        fill_bench::<cardinality_estimator::CardinalityEstimator<u64, ahash::AHasher, { P as usize }, 6>>(&mut group, num);
         fill_bench::<amadeus_streaming::HyperLogLog<u64>>(&mut group, num);
-
-        fill_bench::<probabilistic_collections::hyperloglog::HyperLogLog<u64, ahash::RandomState>>(
-            &mut group, num,
-        );
+        fill_bench::<probabilistic_collections::hyperloglog::HyperLogLog<u64, ahash::RandomState>>(&mut group, num);
         fill_bench::<bench_hll::apache_hll::HyperLogLog<u64>>(&mut group, num);
+        fill_bench::<datasketches::hll::HllSketch>(&mut group, num);
     }
     group.finish();
 }

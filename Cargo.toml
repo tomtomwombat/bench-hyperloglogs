@@ -7,11 +7,13 @@ publish = false
 [dependencies]
 ahash = "0.8.12"
 rapidhash = "4.2.2"
+xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
 
 rand = "0.8"
 rayon = "1.10.0"
 
 amadeus-streaming = "=0.4.3"
+datasketches = "0.2.0"
 cardinality-estimator = "1.0.2"
 hyperloglog = "1.0.2"
 hyperloglogplus = {version = "0.4.1", features = ["const-loop"]} 
